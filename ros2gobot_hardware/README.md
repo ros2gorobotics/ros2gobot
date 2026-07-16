@@ -8,7 +8,7 @@ This repository provides all the essential instructions, diagrams, and configura
 | Item # | Image | Component | Purchasing Links | Notes |
 |:--:|:--:|:-----------------------:|:--------------------:|:-------------------------------------------------------:|
 | 1 | <img src="docs/parts/rpi45.png" width="400"> | Raspberry Pi 4 B (4 GB) | [Amazon](https://www.amazon.com/-/es/desarrollo-Multifuncional-Desarrollo-Aprendizaje-Programaci%C3%B3n/dp/B0B7RN5PPN/ref=sr_1_1?crid=2TP47BV2H7KR3&dib=eyJ2IjoiMSJ9.mGPLQSzGdo46mempglSxiyOOBw_6_bzApyMN9nBELUDhMvprgoi-t-zlc_pvFQPc0UNyPoKxyOc7x5dUVNo2yRiEc5D5H-qOEGPiy5Eyj2CATkz6OrMycJRDrRyIgrX_m3PWq5ZgZlfTX6iFeEzh42QTuLopPU1BAjkaUWcv9hbcXvg4bVRpybxgqssX1YJXzkt-sATzkmN5S7Rpe-7_-y-83lx2S6BdC5XR550Oews._M_Ne0Dh3wEIpSbYG6LzQIDHuXtoYlHuBKReSf9LPZg&dib_tag=se&keywords=raspberry+pi+4&qid=1771022722&sprefix=ras%2Caps%2C150&sr=8-1) | We recommend using a Raspberry Pi 5 with 8GB of RAM if you require more processing power.|
-| 2 | <img src="docs/parts/chassis.png" width="400"> | [Main Chassis](./printing_model/chassis/base_chassis.stl) | 3D Printed | |
+| 2 | <img src="docs/parts/chassis.png" width="400"> | AlumeniumProfile 2020|  | 40 cm x4 , 26 cm x4 , 12 cm x4 or or the size you need |
 | 3 | <img src="docs/parts/lidar_chassis.jpg" width="400"> | [Lidar Mount](./printing_model/chassis/lidar_chassis.stl) | 3D Printed | |
 | 4 | <img src="docs/parts/battery_chassis.jpg" width="400"> | [Battery Housing](./printing_model/chassis/battery_chassis.stl) | 3D Printed | |
 | 5 | <img src="docs/parts/arduino_lock_base.jpg" width="400" > | [Arduino Bracket](./printing_model/chassis/arduino_lock_base.stl) | 3D Printed | |
