@@ -2,14 +2,12 @@
 
 This repository provides all the essential instructions, diagrams, and configurations required to properly build and assemble the robot.
 
-> [!IMPORTANT]
-> We have recently updated the hardware design! If you are working with the legacy version, please refer to [this specific commit (f7af556d00a099cf18a9d1e17eb7e725fa97e1da)](https://github.com/Ekumen-OS/ros2gobot/tree/f7af556d00a099cf18a9d1e17eb7e725fa97e1da).
 
 ## Bill of Materials (BOM)
 
 | Item # | Image | Component | Purchasing Links | Notes |
 |:--:|:--:|:-----------------------:|:--------------------:|:-------------------------------------------------------:|
-| 1 | <img src="docs/parts/rpi45.png" width="400"> | Raspberry Pi 4 B (4 GB) | [PiShop](https://www.pishop.us/product/raspberry-pi-4-model-b-2gb/), [TiendaTec](https://www.tiendatec.es/raspberry-pi/gama-raspberry-pi/1100-raspberry-pi-4-modelo-b-4gb-5056561800349.html), [Amazon](https://www.amazon.com/-/es/desarrollo-Multifuncional-Desarrollo-Aprendizaje-Programaci%C3%B3n/dp/B0B7RN5PPN/ref=sr_1_1?crid=2TP47BV2H7KR3&dib=eyJ2IjoiMSJ9.mGPLQSzGdo46mempglSxiyOOBw_6_bzApyMN9nBELUDhMvprgoi-t-zlc_pvFQPc0UNyPoKxyOc7x5dUVNo2yRiEc5D5H-qOEGPiy5Eyj2CATkz6OrMycJRDrRyIgrX_m3PWq5ZgZlfTX6iFeEzh42QTuLopPU1BAjkaUWcv9hbcXvg4bVRpybxgqssX1YJXzkt-sATzkmN5S7Rpe-7_-y-83lx2S6BdC5XR550Oews._M_Ne0Dh3wEIpSbYG6LzQIDHuXtoYlHuBKReSf9LPZg&dib_tag=se&keywords=raspberry+pi+4&qid=1771022722&sprefix=ras%2Caps%2C150&sr=8-1) | We recommend using a Raspberry Pi 5 with 8GB of RAM if you require more processing power.|
+| 1 | <img src="docs/parts/rpi45.png" width="400"> | Raspberry Pi 4 B (4 GB) | [Amazon](https://www.amazon.com/-/es/desarrollo-Multifuncional-Desarrollo-Aprendizaje-Programaci%C3%B3n/dp/B0B7RN5PPN/ref=sr_1_1?crid=2TP47BV2H7KR3&dib=eyJ2IjoiMSJ9.mGPLQSzGdo46mempglSxiyOOBw_6_bzApyMN9nBELUDhMvprgoi-t-zlc_pvFQPc0UNyPoKxyOc7x5dUVNo2yRiEc5D5H-qOEGPiy5Eyj2CATkz6OrMycJRDrRyIgrX_m3PWq5ZgZlfTX6iFeEzh42QTuLopPU1BAjkaUWcv9hbcXvg4bVRpybxgqssX1YJXzkt-sATzkmN5S7Rpe-7_-y-83lx2S6BdC5XR550Oews._M_Ne0Dh3wEIpSbYG6LzQIDHuXtoYlHuBKReSf9LPZg&dib_tag=se&keywords=raspberry+pi+4&qid=1771022722&sprefix=ras%2Caps%2C150&sr=8-1) | We recommend using a Raspberry Pi 5 with 8GB of RAM if you require more processing power.|
 | 2 | <img src="docs/parts/base_chassis.jpg" width="400"> | [Main Chassis](./printing_model/chassis/base_chassis.stl) | 3D Printed | |
 | 3 | <img src="docs/parts/lidar_chassis.jpg" width="400"> | [Lidar Mount](./printing_model/chassis/lidar_chassis.stl) | 3D Printed | |
 | 4 | <img src="docs/parts/battery_chassis.jpg" width="400"> | [Battery Housing](./printing_model/chassis/battery_chassis.stl) | 3D Printed | |
