@@ -63,12 +63,10 @@ Remember to first go over the assembly instructions at [`ros2gobot_hardware`](./
 ### Platforms
 
 - ROS 2:
-  - Humble Hawksbill
   - Jazzy Jalisco
 - OS:
-  - Ubuntu 22.04 Jammy Jellyfish (Humble)
   - Ubuntu 24.04 Noble Numbat (Jazzy)
-  - Ubuntu Mate 22.04 / Ubuntu Server 24.04 (On real robot e.g: Raspberry Pi 4B)
+  - Ubuntu Server 24.04 (On real robot e.g: Raspberry Pi 4B)
 
 ### Via ansible
 
