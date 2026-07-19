@@ -1,3 +1,6 @@
+[English](README.md) | [ภาษาไทย](README_TH.md) | [ฮาร์ดแวร์](https://github.com/ros2gorobotics/ros2gobot/blob/main/ros2gobot_hardware/README_TH.md)
+
+# ros2gobot_hardware
 # ros2gobot_hardware
 
 This repository provides all the essential instructions, diagrams, and configurations required to properly build and assemble the robot.
