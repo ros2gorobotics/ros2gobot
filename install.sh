@@ -3,7 +3,7 @@
 # ==========================================
 # ROS 2 Jazzy Jalisco Installation Script
 # Based on: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
-# Package: ros-jazzy-ros-base + ros-dev-tools
+# Package: ros-jazzy-ros-base + ros-dev-tools + cyclonedds
 # ==========================================
 
 set -e
@@ -32,10 +32,18 @@ sudo apt install ros-dev-tools -y
 echo "=== 4. Installing ROS 2 Jazzy (ros-jazzy-ros-base) ==="
 sudo apt install ros-jazzy-ros-base -y
 
-echo "=== 5. Setting up Environment ==="
+echo "=== 5. Installing Cyclone DDS ==="
+sudo apt install ros-jazzy-rmw-cyclonedds-cpp -y
+
+echo "=== 6. Setting up Environment ==="
 if ! grep -q "/opt/ros/jazzy/setup.bash" ~/.bashrc; then
     echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
     echo "Added ROS 2 Jazzy setup to ~/.bashrc"
+fi
+
+if ! grep -q "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" ~/.bashrc; then
+    echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
+    echo "Added RMW_IMPLEMENTATION to ~/.bashrc"
 fi
 
 echo "=== Installation Completed Successfully! ==="
