@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec ros2 launch ros2gobot_bringup ros2gobot_robot.launch.py "$@"

@@ -1,0 +1,19 @@
+scan_to_scan_filter_chain:
+  ros__parameters:
+    filter1:
+      name: box_filter
+      type: laser_filters/LaserScanBoxFilter
+      params:
+        box_frame: laser_link
+        
+        # ⚠️ เปลี่ยนช่วง X ให้เป็นฝั่งบวก (เพราะแกน X ชี้ไปด้านหลัง)
+        min_x: 0.10    # เริ่มตัดตั้งแต่ 10 ซม. (นับจากจุดศูนย์กลาง Lidar ไปตามแกน X)
+        max_x: 0.60    # ลากกล่องยาวไปถึง 1.2 เมตร 
+        
+        # แกน Y กว้างซ้าย-ขวาเหมือนเดิม
+        min_y: -0.40   
+        max_y: 0.40    
+        
+        min_z: -0.20   
+        max_z: 0.20    
+        invert: false
