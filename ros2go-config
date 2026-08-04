@@ -20,18 +20,31 @@ BACKEND_API_URL="https://ros2go-core.pages.dev/ros2go_core.sh"
 
 echo -e "\e[36mกำลังเชื่อมต่อและดึงข้อมูลระบบจาก Backend...\e[0m"
 
-# โหลดและรัน source ทันทีจาก URL (เพิ่ม -L เพื่อรองรับการ Redirect)
-source <(curl -s -L -f "$BACKEND_API_URL")
+# สร้างไฟล์ชั่วคราวแบบสุ่มชื่อ (คนอื่นเดาชื่อไฟล์ไม่ได้)
+TMP_CORE=$(mktemp)
 
-# ตรวจสอบความถูกต้อง: เช็คว่าฟังก์ชันถูกโหลดเข้ามาในระบบจริงหรือไม่
+# ดาวน์โหลดไฟล์จาก Cloudflare
+if ! curl -s -L -f -o "$TMP_CORE" "$BACKEND_API_URL"; then
+    clear
+    echo -e "\e[31m❌ ข้อผิดพลาด: ไม่สามารถดาวน์โหลดไฟล์จาก Backend ได้\e[0m"
+    rm -f "$TMP_CORE"
+    exit 1
+fi
+
+# ตัดอักขระพิเศษของ Windows (\r) ทิ้ง เพื่อให้ Linux อ่านฟังก์ชันได้ 100%
+sed -i 's/\r$//' "$TMP_CORE"
+
+# โหลดฟังก์ชันทั้งหมดเข้าสู่ Memory
+source "$TMP_CORE"
+
+# ลบไฟล์ชั่วคราวทิ้งทันที! เพื่อไม่ให้ใครเปิดอ่าน Source code ต้นฉบับได้
+rm -f "$TMP_CORE"
+
+# ตรวจสอบขั้นสุดท้ายว่าฟังก์ชันพร้อมทำงานจริงๆ
 if ! type install_system_requirements >/dev/null 2>&1; then
     clear
-    echo -e "\e[31m❌ เกิดข้อผิดพลาดร้ายแรง: โหลดชุดคำสั่งจาก Backend ไม่สำเร็จ\e[0m"
-    echo "สาเหตุที่เป็นไปได้:"
-    echo "1. ลิงก์ใน BACKEND_API_URL ผิด (หากใช้ GitHub ต้องเป็นลิงก์ Raw)"
-    echo "2. ไฟล์บน Server ไม่สามารถเข้าถึงได้ (404 Not Found)"
-    echo "3. บอร์ดที่รันสคริปต์ไม่มีการเชื่อมต่ออินเทอร์เน็ต"
-    echo -e "\nลิงก์ที่ระบบพยายามดึงข้อมูลคือ:\n$BACKEND_API_URL\n"
+    echo -e "\e[31m❌ เกิดข้อผิดพลาด: ดาวน์โหลดไฟล์สำเร็จ แต่ระบบอ่านฟังก์ชันไม่เจอ\e[0m"
+    echo "โปรดตรวจสอบโครงสร้างโค้ดในไฟล์ ros2go_core.sh บนเซิร์ฟเวอร์"
     exit 1
 fi
 # ==========================================
