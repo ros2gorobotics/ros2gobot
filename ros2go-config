@@ -20,13 +20,20 @@ BACKEND_API_URL="https://ros2go-core.pages.dev/ros2go_core.sh"
 
 echo -e "\e[36mกำลังเชื่อมต่อและดึงข้อมูลระบบจาก Backend...\e[0m"
 
-# โหลดและรัน source ทันทีจาก URL (ใช้ Process Substitution)
-source <(curl -s -f "$BACKEND_API_URL") || {
-    echo -e "\e[31m❌ ข้อผิดพลาด: ไม่สามารถดึงข้อมูลจาก Backend ได้\e[0m"
-    echo "กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือตรวจสอบ URL ของ Server"
-    exit 1
-}
+# โหลดและรัน source ทันทีจาก URL (เพิ่ม -L เพื่อรองรับการ Redirect)
+source <(curl -s -L -f "$BACKEND_API_URL")
 
+# ตรวจสอบความถูกต้อง: เช็คว่าฟังก์ชันถูกโหลดเข้ามาในระบบจริงหรือไม่
+if ! type install_system_requirements >/dev/null 2>&1; then
+    clear
+    echo -e "\e[31m❌ เกิดข้อผิดพลาดร้ายแรง: โหลดชุดคำสั่งจาก Backend ไม่สำเร็จ\e[0m"
+    echo "สาเหตุที่เป็นไปได้:"
+    echo "1. ลิงก์ใน BACKEND_API_URL ผิด (หากใช้ GitHub ต้องเป็นลิงก์ Raw)"
+    echo "2. ไฟล์บน Server ไม่สามารถเข้าถึงได้ (404 Not Found)"
+    echo "3. บอร์ดที่รันสคริปต์ไม่มีการเชื่อมต่ออินเทอร์เน็ต"
+    echo -e "\nลิงก์ที่ระบบพยายามดึงข้อมูลคือ:\n$BACKEND_API_URL\n"
+    exit 1
+fi
 # ==========================================
 # 2. ตั้งค่า Environment สำหรับผู้ใช้
 # ==========================================
