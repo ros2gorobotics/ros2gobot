@@ -16,7 +16,7 @@ fi
 # 1. ดึงโค้ดฟังก์ชันจาก Backend (โหลดลง Memory ทันที ไม่เซฟไฟล์)
 # ==========================================
 # 🛑 เปลี่ยน URL ด้านล่างนี้ให้เป็น Endpoint Server ของคุณ
-BACKEND_API_URL="https://ros2go-core.pages.dev/ros2go_core.sh" 
+BACKEND_API_URL="https://ros2go-core.pages.dev/ros2go_core.sh"
 
 echo -e "\e[36mกำลังเชื่อมต่อและดึงข้อมูลระบบจาก Backend...\e[0m"
 
