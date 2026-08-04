@@ -90,7 +90,7 @@ def generate_launch_description():
     # ----------------------------------------------------
     #   IMU Node (BNO08x)
     # ----------------------------------------------------
-    pkg_bno086_driver = get_package_share_directory('bno086_driver')
+    pkg_bno086_driver = get_package_share_directory('bno086_uartrvc_driver')
     imu_config_file = os.path.join(
         pkg_bno086_driver, 
         'config',
@@ -98,9 +98,9 @@ def generate_launch_description():
     )
 
     imu_node = Node(
-        package='bno086_driver',  
-        executable='bno086_driver',  
-        name='bno086_driver',
+        package='bno086_uartrvc_driver',  
+        executable='bno086_uartrvc_driver',  
+        name='bno086_uartrvc_driver',
         output='screen',
         parameters=[imu_config_file]
     )
@@ -125,25 +125,7 @@ def generate_launch_description():
     # EKF   ros2gobot_control   IMU   6.0 
     ekf_timer = TimerAction(period=6.0, actions=[ekf_node])
 
-    # ----------------------------------------------------
-    #   RF2O Laser Odometry Node
-    # ----------------------------------------------------
-    rf2o_node = Node(
-        package='rf2o_laser_odometry',
-        executable='rf2o_laser_odometry_node',
-        name='rf2o_laser_odometry',
-        output='screen',
-        parameters=[{
-            'laser_scan_topic': '/scan',
-            'odom_topic': '/odom_rf2o',
-            'publish_tf': False,
-            'base_frame_id': 'base_footprint',
-            'odom_frame_id': 'odom',
-            'init_pose_from_topic': '',
-            'freq': 10.0
-        }],
-        arguments=['--ros-args', '--log-level', 'error']
-    )
+   
     
     # ----------------------------------------------------
     # Global Error Handler
@@ -196,7 +178,6 @@ def generate_launch_description():
         rplidar_arg,
         laser_range_filter_arg,      # [NEW] Argument   Filter
         rplidar_timer,
-        rf2o_node,                   # [NEW] RF2O Node
         ros2gobot_monitor_node,      # Node 
         rosbridge_websocket_node,    # Node   WebSocket
     ])
