@@ -1,0 +1,128 @@
+#!/bin/bash
+
+# ==========================================
+# 0. ตรวจสอบและขอสิทธิ์ sudo แค่ครั้งแรกครั้งเดียว
+# ==========================================
+if [ "$EUID" -ne 0 ]; then
+    echo "=================================================="
+    echo "สคริปต์นี้จำเป็นต้องใช้สิทธิ์ผู้ดูแลระบบ (Root)"
+    echo "กรุณาใส่รหัสผ่าน (Password) เพียงครั้งเดียวเพื่อดำเนินการต่อ..."
+    echo "=================================================="
+    exec sudo bash "$0" "$@"
+    exit $?
+fi
+
+# ==========================================
+# 1. ดึงโค้ดฟังก์ชันจาก Backend (โหลดลง Memory ทันที ไม่เซฟไฟล์)
+# ==========================================
+# 🛑 เปลี่ยน URL ด้านล่างนี้ให้เป็น Endpoint Server ของคุณ
+BACKEND_API_URL="https://ros2go-core.pages.dev/ros2go_core.sh" 
+
+echo -e "\e[36mกำลังเชื่อมต่อและดึงข้อมูลระบบจาก Backend...\e[0m"
+
+# โหลดและรัน source ทันทีจาก URL (ใช้ Process Substitution)
+source <(curl -s -f "$BACKEND_API_URL") || {
+    echo -e "\e[31m❌ ข้อผิดพลาด: ไม่สามารถดึงข้อมูลจาก Backend ได้\e[0m"
+    echo "กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือตรวจสอบ URL ของ Server"
+    exit 1
+}
+
+# ==========================================
+# 2. ตั้งค่า Environment สำหรับผู้ใช้
+# ==========================================
+if [ -n "$SUDO_USER" ]; then
+    ACTUAL_USER=$SUDO_USER
+    ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    ACTUAL_USER=$USER
+    ACTUAL_HOME=$HOME
+fi
+BASHRC_FILE="${ACTUAL_HOME}/.bashrc"
+export ACTUAL_USER ACTUAL_HOME BASHRC_FILE
+
+# ==========================================
+# 3. Main Menu Loop (UI หน้าจอ)
+# ==========================================
+while true; do
+    CHOICE=$(whiptail --title "ROS2GO Platform Configuration" \
+    --menu "กรุณาเลือกรายการที่ต้องการดำเนินการ:" 22 75 9 \
+    "0" "ติดตั้งทั้งหมด (Recommended)" \
+    "1" "ติดตั้งโปรแกรมระบบที่จำเป็น (System Setup)" \
+    "2" "ติดตั้ง ROS 2 Jazzy (Base + CycloneDDS)" \
+    "3" "ตรวจสอบสถานะการติดตั้งระบบ" \
+    "4" "ติดตั้ง Driver RPLIDAR C1" \
+    "5" "ติดตั้ง Driver IMU BNO085 UART-RVC" \
+    "6" "ติดตั้ง ros2gobot (Base + Source) & Auto-start" \
+    "7" "ติดตั้ง ROS2GO AMR API Server" \
+    "8" "ออกจากโปรแกรม" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        clear
+        echo "ออกจากโปรแกรม ROS2GO"
+        exit 0
+    fi
+
+    case $CHOICE in
+        0)
+            if whiptail --title "ยืนยันการติดตั้งทั้งหมด" --yesno "ระบบจะทำการติดตั้งทุกขั้นตอน (1, 2, 4, 5, 6, 7) ต่อเนื่องกันอัตโนมัติ\nโดยจะใช้เวลาสักครู่...\n\nต้องการดำเนินการต่อหรือไม่?" 10 70; then
+                CONFIRM_TEXT=$(whiptail --title "ยืนยันความปลอดภัย" --inputbox "เพื่อป้องกันการกดผิดพลาด กรุณาพิมพ์คำว่า 'ros2go' ด้านล่างเพื่อยืนยันการติดตั้งทั้งหมด:" 10 60 3>&1 1>&2 2>&3)
+                if [ "$?" -eq 0 ]; then
+                    if [ "$CONFIRM_TEXT" == "ros2go" ]; then
+                        export BATCH_MODE="1"
+                        install_system_requirements
+                        install_ros2_jazzy
+                        install_ros2_jazzy_navigation
+                        install_rplidar_driver
+                        install_imu_bno085_driver
+                        install_ros2gobot
+                        install_ros2go_api
+                        
+                        check_installation "prompt_reboot"
+                        export BATCH_MODE="0"
+                    else
+                        whiptail --title "เกิดข้อผิดพลาด" --msgbox "คำยืนยันไม่ถูกต้อง (คุณพิมพ์: $CONFIRM_TEXT)\n\nระบบจะยกเลิกการติดตั้งทั้งหมดเพื่อความปลอดภัย" 10 60
+                    fi
+                fi
+            fi
+            ;;
+        1)
+            if whiptail --title "ยืนยันการติดตั้งระบบ" --yesno "ระบบจะทำการอัปเดต OS, ตั้งค่าสิทธิ์, ปิดโหมด Sleep\nและติดตั้งเครื่องมือรวมถึง Web Terminal (ttyd)\n\nต้องการดำเนินการต่อหรือไม่?" 10 60; then
+                install_system_requirements
+            fi
+            ;;
+        2)
+            if whiptail --title "ยืนยันการติดตั้ง ROS 2" --yesno "ระบบจะทำการดาวน์โหลดและติดตั้ง ROS 2 Jazzy\nรวมถึงตั้งค่า Locale และ Environment\n\nต้องการดำเนินการต่อหรือไม่?" 10 60; then
+                install_ros2_jazzy
+                install_ros2_jazzy_navigation
+            fi
+            ;;
+        3)
+            check_installation
+            ;;
+        4)
+            if whiptail --title "ยืนยันการติดตั้ง RPLIDAR Driver" --yesno "ระบบจะทำการลบ rplidar_ws เก่า(ถ้ามี) แล้วสร้างใหม่\nเพื่อดาวน์โหลดและคอมไพล์ Driver RPLIDAR C1\n\nต้องการดำเนินการต่อหรือไม่?" 10 65; then
+                install_rplidar_driver
+            fi
+            ;;
+        5)
+            if whiptail --title "ยืนยันการติดตั้ง IMU Driver" --yesno "ระบบจะเปิดใช้งาน UART บน GPIO\nและดาวน์โหลด Driver IMU BNO085 เข้าสู่ Workspace\n\nต้องการดำเนินการต่อหรือไม่?" 10 65; then
+                install_imu_bno085_driver
+            fi
+            ;;
+        6)
+            if whiptail --title "ยืนยันการติดตั้งแพ็กเกจ ros2gobot" --yesno "ระบบจะทำการติดตั้ง ros2gobot_base และดาวน์โหลด Source Code\nพร้อมสร้าง Service ให้หุ่นยนต์ทำงานอัตโนมัติ\n\nต้องการดำเนินการต่อหรือไม่?" 10 70; then
+                install_ros2gobot
+            fi
+            ;;
+        7)
+            if whiptail --title "ยืนยันการติดตั้ง ROS2GO API" --yesno "ระบบจะทำการดาวน์โหลด Source Code มาที่ /opt/ros2go/api\nพร้อมสร้าง Service เพื่อให้ API ทำงานอัตโนมัติ\n\nต้องการดำเนินการต่อหรือไม่?" 10 70; then
+                install_ros2go_api
+            fi
+            ;;
+        8)
+            clear
+            echo "ออกจากโปรแกรม ROS2GO"
+            exit 0
+            ;;
+    esac
+done
