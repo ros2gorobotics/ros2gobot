@@ -135,14 +135,7 @@ def generate_launch_description():
         name='ros2gobot_monitor',
         output='screen'
     )
-    
-    api_server_node = Node(
-        package='ros2gobot_monitor',
-        executable='api_server',
-        name='api_server_node',
-        output='screen'
-    )
-
+        
     rosbridge_websocket_node = Node(
         package='rosbridge_server',
         executable='rosbridge_websocket',
@@ -168,6 +161,5 @@ def generate_launch_description():
         laser_range_filter_arg,      # [NEW] Argument สำหรับ Filter
         rplidar_timer,
         ros2gobot_monitor_node,      # Node ติดตามสถานะ
-        api_server_node,             # Node สำหรับ Web API (สั่งงานผ่านเว็บ)
         rosbridge_websocket_node,    # Node สำหรับ WebSocket
     ])
