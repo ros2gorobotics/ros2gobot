@@ -5,13 +5,13 @@ from rclpy.node import Node
 from rcl_interfaces.msg import Log
 from ros2gobot_msgs.msg import RobotLog, RobotStatus
 
-# นำเข้า Message สำหรับเช็ค Lidar, IMU, ODOM, TF
 from sensor_msgs.msg import LaserScan, Imu
 from nav_msgs.msg import Odometry
 from tf2_msgs.msg import TFMessage
 
 import psutil
 import os
+import time  # 👉 ใช้ standard time ของ Python เร็วกว่าของ ROS 2 มากๆ
 
 class MonitorNode(Node):
     def __init__(self):
@@ -21,20 +21,20 @@ class MonitorNode(Node):
         # 1. Subscribers
         # ---------------------------------------------------------
         self.sub_rosout = self.create_subscription(
-            Log, "/rosout", self.log_callback, 100
+            Log, "/rosout", self.log_callback, 10
         )
         
-        # Subscribe เพื่อเช็ค Heartbeat ของเซนเซอร์ต่างๆ
-        self.sub_scan = self.create_subscription(LaserScan, "/scan", self.scan_callback, 10)
-        self.sub_imu = self.create_subscription(Imu, "/imu/data", self.imu_callback, 10)
-        self.sub_odom = self.create_subscription(Odometry, "/odom", self.odom_callback, 10)
-        self.sub_tf = self.create_subscription(TFMessage, "/tf", self.tf_callback, 10)
+        # 👉 ปรับ Queue size เหลือ 1 เพื่อไม่ให้เก็บข้อความค้างไว้ใน RAM และลดภาระ CPU
+        self.sub_scan = self.create_subscription(LaserScan, "/scan", self.scan_callback, 1)
+        self.sub_imu = self.create_subscription(Imu, "/imu/data", self.imu_callback, 1)
+        self.sub_odom = self.create_subscription(Odometry, "/odom", self.odom_callback, 1)
+        self.sub_tf = self.create_subscription(TFMessage, "/tf", self.tf_callback, 1)
 
         # ---------------------------------------------------------
         # 2. Publishers
         # ---------------------------------------------------------
-        self.pub_log = self.create_publisher(RobotLog, "/robot/log", 100)
-        self.pub_status = self.create_publisher(RobotStatus, "/robot/status", 10)
+        self.pub_log = self.create_publisher(RobotLog, "/robot/log", 10)
+        self.pub_status = self.create_publisher(RobotStatus, "/robot/status", 5)
 
         # ---------------------------------------------------------
         # 3. Timers & State Variables
@@ -54,20 +54,21 @@ class MonitorNode(Node):
         self.last_odom_time = None
         self.last_tf_time = None
 
-        self.get_logger().info("ROS2GO Monitor Node started (with Full Sensor Check).")
+        self.get_logger().info("ROS2GO Monitor Node started (Optimized Version).")
 
     # --- Callbacks สำหรับอัปเดตเวลาล่าสุดที่ได้รับข้อมูล ---
+    # 👉 ใช้ time.time() ประหยัด CPU กว่า self.get_clock().now() อย่างมหาศาล
     def scan_callback(self, msg):
-        self.last_scan_time = self.get_clock().now()
+        self.last_scan_time = time.time()
 
     def imu_callback(self, msg):
-        self.last_imu_time = self.get_clock().now()
+        self.last_imu_time = time.time()
 
     def odom_callback(self, msg):
-        self.last_odom_time = self.get_clock().now()
+        self.last_odom_time = time.time()
 
     def tf_callback(self, msg):
-        self.last_tf_time = self.get_clock().now()
+        self.last_tf_time = time.time()
 
     def log_callback(self, msg):
         """จัดการ Log จาก /rosout"""
@@ -91,22 +92,23 @@ class MonitorNode(Node):
 
     def status_timer_callback(self):
         """ตรวจสอบสถานะระบบทุก 1 วินาที"""
-        now = self.get_clock().now()
+        now = time.time()
 
-        # 1. เช็ค Mapping/Navigation mode จาก Node List (ทุกๆ 5 วินาที เพื่อลดภาระ CPU)
+        # 1. เช็ค Mapping/Navigation mode จาก Node List 
+        # 👉 ปรับเป็นทุกๆ 10 วินาที เพื่อให้ประหยัดทรัพยากรขั้นสุด
         self.node_check_counter += 1
-        if self.node_check_counter >= 5:
+        if self.node_check_counter >= 10:
             node_names = self.get_node_names()
             self.mapping_active = any('slam_toolbox' in str(name).lower() for name in node_names)
             self.navigation_active = any('bt_navigator' in str(name).lower() for name in node_names)
             self.node_check_counter = 0
             
         # 2. เช็ค Sensor Status 
-        # ถ้าพึ่งเริ่มรันระบบแล้วยังไม่มีข้อมูล (เป็น None) หรือข้อมูลขาดหายไปเกิน 3 วินาที จะถือว่า Error (999.0)
-        time_since_scan = (now - self.last_scan_time).nanoseconds / 1e9 if self.last_scan_time else 999.0
-        time_since_imu = (now - self.last_imu_time).nanoseconds / 1e9 if self.last_imu_time else 999.0
-        time_since_odom = (now - self.last_odom_time).nanoseconds / 1e9 if self.last_odom_time else 999.0
-        time_since_tf = (now - self.last_tf_time).nanoseconds / 1e9 if self.last_tf_time else 999.0
+        # 👉 โค้ดส่วนคำนวณเวลาสั้นและเร็วกว่าเดิมมาก เพราะไม่ได้ใช้ ROS 2 Time Object
+        time_since_scan = (now - self.last_scan_time) if self.last_scan_time else 999.0
+        time_since_imu = (now - self.last_imu_time) if self.last_imu_time else 999.0
+        time_since_odom = (now - self.last_odom_time) if self.last_odom_time else 999.0
+        time_since_tf = (now - self.last_tf_time) if self.last_tf_time else 999.0
 
         lidar_ok = time_since_scan < 3.0
         imu_ok = time_since_imu < 3.0
