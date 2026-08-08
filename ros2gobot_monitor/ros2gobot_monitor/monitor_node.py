@@ -90,9 +90,16 @@ class MonitorNode(Node):
     def status_timer_callback(self):
         """ตรวจสอบสถานะระบบทุก 1 วินาที"""
         now = self.get_clock().now()
+
+        self.node_check_counter += 1
+        if self.node_check_counter >= 3:
+            node_names = self.get_node_names()
+            self.mapping_active = any('slam_toolbox' in name.lower() for name in node_names)
+            self.navigation_active = any('bt_navigator' in name.lower() for name in node_names)
+            self.node_check_counter = 0
         
         # 1. เช็ค Mapping/Navigation mode จาก Node List
-        node_names = self.get_node_names()
+        
         self.mapping_active = any('slam_toolbox' in name.lower() for name in node_names)
         self.navigation_active = any('bt_navigator' in name.lower() for name in node_names)
         
