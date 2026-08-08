@@ -5,7 +5,7 @@ from rclpy.node import Node
 from rcl_interfaces.msg import Log
 from ros2gobot_msgs.msg import RobotLog, RobotStatus
 
-# 👉 เพิ่มการ import สำหรับเช็ค Lidar, IMU, ODOM, TF
+# นำเข้า Message สำหรับเช็ค Lidar, IMU, ODOM, TF
 from sensor_msgs.msg import LaserScan, Imu
 from nav_msgs.msg import Odometry
 from tf2_msgs.msg import TFMessage
@@ -42,16 +42,17 @@ class MonitorNode(Node):
         self.timer_status = self.create_timer(1.0, self.status_timer_callback)
 
         self.battery_level = 100.0
+        
+        # กำหนดค่าเริ่มต้นของระบบ
         self.navigation_active = False
         self.mapping_active = False
         self.node_check_counter = 0
         
-        # เก็บเวลาเริ่มต้นของแต่ละเซนเซอร์
-        now = self.get_clock().now()
-        self.last_scan_time = now
-        self.last_imu_time = now
-        self.last_odom_time = now
-        self.last_tf_time = now
+        # เก็บเวลาเริ่มต้นของแต่ละเซนเซอร์ ให้เป็น None เพื่อป้องกัน Stale Data
+        self.last_scan_time = None
+        self.last_imu_time = None
+        self.last_odom_time = None
+        self.last_tf_time = None
 
         self.get_logger().info("ROS2GO Monitor Node started (with Full Sensor Check).")
 
@@ -92,23 +93,20 @@ class MonitorNode(Node):
         """ตรวจสอบสถานะระบบทุก 1 วินาที"""
         now = self.get_clock().now()
 
+        # 1. เช็ค Mapping/Navigation mode จาก Node List (ทุกๆ 5 วินาที เพื่อลดภาระ CPU)
         self.node_check_counter += 1
-        if self.node_check_counter >= 3:
+        if self.node_check_counter >= 5:
             node_names = self.get_node_names()
-            self.mapping_active = any('slam_toolbox' in name.lower() for name in node_names)
-            self.navigation_active = any('bt_navigator' in name.lower() for name in node_names)
+            self.mapping_active = any('slam_toolbox' in str(name).lower() for name in node_names)
+            self.navigation_active = any('bt_navigator' in str(name).lower() for name in node_names)
             self.node_check_counter = 0
-        
-        # 1. เช็ค Mapping/Navigation mode จาก Node List
-        
-        self.mapping_active = any('slam_toolbox' in name.lower() for name in node_names)
-        self.navigation_active = any('bt_navigator' in name.lower() for name in node_names)
-        
-        # 2. เช็ค Sensor Status (ถ้าไม่มีข้อมูลเข้ามาเกิน 3 วินาที จะถือว่า Timeout/Error)
-        time_since_scan = (now - self.last_scan_time).nanoseconds / 1e9
-        time_since_imu = (now - self.last_imu_time).nanoseconds / 1e9
-        time_since_odom = (now - self.last_odom_time).nanoseconds / 1e9
-        time_since_tf = (now - self.last_tf_time).nanoseconds / 1e9
+            
+        # 2. เช็ค Sensor Status 
+        # ถ้าพึ่งเริ่มรันระบบแล้วยังไม่มีข้อมูล (เป็น None) หรือข้อมูลขาดหายไปเกิน 3 วินาที จะถือว่า Error (999.0)
+        time_since_scan = (now - self.last_scan_time).nanoseconds / 1e9 if self.last_scan_time else 999.0
+        time_since_imu = (now - self.last_imu_time).nanoseconds / 1e9 if self.last_imu_time else 999.0
+        time_since_odom = (now - self.last_odom_time).nanoseconds / 1e9 if self.last_odom_time else 999.0
+        time_since_tf = (now - self.last_tf_time).nanoseconds / 1e9 if self.last_tf_time else 999.0
 
         lidar_ok = time_since_scan < 3.0
         imu_ok = time_since_imu < 3.0
@@ -120,7 +118,7 @@ class MonitorNode(Node):
         
         # System Resources
         status_msg.cpu = float(psutil.cpu_percent(interval=None))
-        status_msg.cpu_temp = float(self.get_cpu_temp()) # 👉 เพิ่มอุณหภูมิ CPU
+        status_msg.cpu_temp = float(self.get_cpu_temp())
         status_msg.ram = float(psutil.virtual_memory().percent)
         status_msg.disk = float(psutil.disk_usage('/').percent)
         status_msg.battery = self.battery_level
@@ -129,9 +127,8 @@ class MonitorNode(Node):
         status_msg.navigation_active = self.navigation_active
         status_msg.mapping_active = self.mapping_active
         
-        # Sensor Status (อิงตามไฟล์ RobotStatus.msg)
-        # หมายเหตุ: รองรับทั้งกรณีที่คุณประกาศตัวแปรเป็น bool หรือ string
-        status_msg.lidar_status = lidar_ok        # ถ้าใน .msg เป็น string ให้แก้เป็น "OK" if lidar_ok else "ERROR"
+        # Sensor Status
+        status_msg.lidar_status = lidar_ok        
         status_msg.imu_status = imu_ok
         status_msg.odom_status = odom_ok
         status_msg.tf_status = tf_ok
