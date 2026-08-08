@@ -44,6 +44,7 @@ class MonitorNode(Node):
         self.battery_level = 100.0
         self.navigation_active = False
         self.mapping_active = False
+        self.node_check_counter = 0
         
         # เก็บเวลาเริ่มต้นของแต่ละเซนเซอร์
         now = self.get_clock().now()
