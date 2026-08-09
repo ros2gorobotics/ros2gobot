@@ -1,0 +1,146 @@
+#include <chrono>
+#include <memory>
+#include <string>
+#include <fstream>
+#include <algorithm>
+
+#include "rclcpp/rclcpp.hpp"
+#include "rcutils/cmdline_parser.h"
+#include "ros2gobot_msgs/msg/robot_status.h"
+#include "ros2gobot_msgs/msg/robot_log.h"
+#include "rcl_interfaces/msg/log.hpp"
+
+using namespace std::chrono_literals;
+
+class MonitorNode : public rclcpp::Node
+{
+public:
+  MonitorNode() : Node("ros2gobot_monitor"), node_check_counter_(0)
+  {
+    // 1. Subscribers
+    sub_rosout_ = this->create_subscription<rcl_interfaces::msg::Log>(
+      "/rosout", 10, std::bind(&MonitorNode::log_callback, this, std::placeholders::_1)
+    );
+
+    // 2. Publishers
+    pub_log_ = this->create_publisher<ros2gobot_msgs::msg::RobotLog>("/robot/log", 10);
+    pub_status_ = this->create_publisher<ros2gobot_msgs::msg::RobotStatus>("/robot/status", 5);
+
+    // 3. Timer (ทำงานทุก 1 หรือ 2 วินาที ตามต้องการ)
+    timer_status_ = this->create_wall_timer(
+      1.0s, std::bind(&MonitorNode::status_timer_callback, this)
+    );
+
+    RCLCPP_INFO(this->get_logger(), "ROS2GO Monitor Node (C++ Optimized Version) started.");
+  }
+
+private:
+  void log_callback(const rcl_interfaces::msg::Log::SharedPtr msg)
+  {
+    if (msg->level < 20) return;
+
+    auto out_msg = ros2gobot_msgs::msg::RobotLog();
+    out_msg.level = msg->level;
+    out_msg.node = msg->name;
+    out_msg.message = msg->msg;
+    out_msg.stamp = msg->stamp;
+
+    pub_log_->publish(out_msg);
+  }
+
+  float get_cpu_temp()
+  {
+    std::ifstream thermal_file("/sys/class/thermal/thermal_zone0/temp");
+    if (thermal_file.is_open()) {
+      std::string temp_str;
+      std::getline(thermal_file, temp_str);
+      try {
+        return std::stof(temp_str) / 1000.0f;
+      } catch (...) {
+        return 0.0f;
+      }
+    }
+    return 0.0f;
+  }
+
+  // ฟังก์ชันจำลองการอ่านค่า CPU (ใน C++ จริงๆ อาจใช้ system call หรือเปิด /proc/stat แต่เพื่อความเบา สามารถใช้ค่าประมาณหรือข้ามได้)
+  float get_cpu_usage()
+  {
+    // อ่านค่าคร่าวๆ หรือใช้คำสั่งเบาๆ 
+    std::ifstream proc_stat("/proc/stat");
+    if (!proc_stat.is_open()) return 0.0f;
+    
+    // สำหรับความเรียบง่าย สามารถดึงผ่านคำสั่งหรืออ่านค่า system ได้
+    // แต่ในที่นี้ใช้ค่า 0.0 หรือเชื่อมต่อกับไลบรารีระบบได้ตามสะดวก
+    return 0.0f; 
+  }
+
+  void status_timer_callback()
+  {
+    // 1. เช็ค Node List ทุกๆ 10 รอบ (10 วินาที) เพื่อลดภาระ
+    node_check_counter_++;
+    if (node_check_counter_ >= 10) {
+      auto node_names = this->get_node_names();
+      mapping_active_ = false;
+      navigation_active_ = false;
+
+      for (const auto & name : node_names) {
+        std::string lower_name = name;
+        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+        if (lower_name.find("slam_toolbox") != std::string::npos) {
+          mapping_active_ = true;
+        }
+        if (lower_name.find("bt_navigator") != std::string::npos) {
+          navigation_active_ = true;
+        }
+      }
+      node_check_counter_ = 0;
+    }
+
+    // 2. เช็ค Sensor Status ด้วย count_publishers (0% CPU Overhead)
+    bool lidar_ok = this->count_publishers("/scan") > 0;
+    bool imu_ok = this->count_publishers("/imu/data") > 0;
+    bool odom_ok = this->count_publishers("/odom") > 0;
+    bool tf_ok = this->count_publishers("/tf") > 0;
+
+    // สร้างข้อความ Status
+    auto status_msg = ros2gobot_msgs::msg::RobotStatus();
+    
+    status_msg.cpu_temp = get_cpu_temp();
+    status_msg.cpu = 0.0; // สามารถใส่ฟังก์ชันคำนวณ CPU เพิ่มเติมได้
+    status_msg.ram = 0.0; // สามารถอ่านจาก /proc/meminfo ได้
+    status_msg.disk = 0.0;
+    status_msg.battery = 100.0;
+
+    status_msg.navigation_active = navigation_active_;
+    status_msg.mapping_active = mapping_active_;
+
+    status_msg.lidar_status = lidar_ok;
+    status_msg.imu_status = imu_ok;
+    status_msg.odom_status = odom_ok;
+    status_msg.tf_status = tf_ok;
+
+    status_msg.hardware_status = imu_ok && odom_ok;
+    status_msg.localization_status = tf_ok;
+
+    pub_status_->publish(status_msg);
+  }
+
+  rclcpp::Subscription<rcl_interfaces::msg::Log>::SharedPtr sub_rosout_;
+  rclcpp::Publisher<ros2gobot_msgs::msg::RobotLog>::SharedPtr pub_log_;
+  rclcpp::Publisher<ros2gobot_msgs::msg::RobotStatus>::SharedPtr pub_status_;
+  rclcpp::TimerBase::SharedPtr timer_status_;
+
+  int node_check_counter_;
+  bool navigation_active_;
+  bool mapping_active_;
+};
+
+int main(int argc, char * argv[])
+{
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<MonitorNode>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
+}
