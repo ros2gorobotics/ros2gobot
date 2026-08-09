@@ -6,8 +6,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/cmdline_parser.h"
-#include "ros2gobot_msgs/msg/robot_status.h"
-#include "ros2gobot_msgs/msg/robot_log.h"
+#include "ros2gobot_msgs/msg/robot_status.hpp"
+#include "ros2gobot_msgs/msg/robot_log.hpp"
 #include "rcl_interfaces/msg/log.hpp"
 
 using namespace std::chrono_literals;
