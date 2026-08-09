@@ -36,6 +36,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <sys/statvfs.h> // 👉 เพิ่มสำหรับอ่านค่า Disk
 
 #include "rclcpp/rclcpp.hpp"
 #include "ros2gobot_msgs/msg/robot_status.hpp"
@@ -49,8 +50,13 @@ public:
 
 private:
   void log_callback(const rcl_interfaces::msg::Log::SharedPtr msg);
+  
+  // 👉 ฟังก์ชันอ่าน System Resources
   float get_cpu_temp();
   float get_cpu_usage();
+  float get_ram_usage();
+  float get_disk_usage();
+  
   void status_timer_callback();
 
   rclcpp::Subscription<rcl_interfaces::msg::Log>::SharedPtr sub_rosout_;
@@ -61,6 +67,10 @@ private:
   int node_check_counter_;
   bool navigation_active_;
   bool mapping_active_;
+  
+  // 👉 ตัวแปรสำหรับคำนวณ % CPU
+  unsigned long long last_cpu_total_;
+  unsigned long long last_cpu_idle_;
 };
 
-#endif  // ROS2GOBOT_MONITOR__MONITOR_NODE_HPP_
+#endif
